@@ -1,10 +1,11 @@
 package com.tapia.controller;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,28 +13,35 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tapia.model.Store;
+import com.tapia.repository.StoreRepository;
 
 @RestController("/")
 public class StoreController {
 
-	private final static List<Store> storeList = Arrays.asList(new Store("store-1", 1l), new Store("store-2", 2l),
-			new Store("store-3", 3l));
+	@Autowired
+	private StoreRepository storeRepository;
+	
+	@PostConstruct
+	private void loadDummyData() {
+		
+		
+		storeRepository.save(new Store(null, "Golde chicken"));
+		storeRepository.save(new Store(null, "Burger Boy"));
+		storeRepository.save(new Store(null, "MC Coapan"));
+		
+	}
+	
 
 	@GetMapping("/store")
 	public List<Store> retrieveAllStores() {
-		return storeList;
+		return storeRepository.findAll();
 	}
 
 	@GetMapping("/store/{id}")
 	public ResponseEntity<Store> findById(@PathVariable long id) {
 
-		final Comparator<Store> comparator = (s1, s2) -> (int) (s1.getStoreId() - s2.getStoreId());
-
-		Collections.sort(storeList, comparator);
-
-		int index = Collections.binarySearch(storeList, new Store("dummy", id), comparator);
-
-		return index >= 0 ? new ResponseEntity<>(storeList.get(index), HttpStatus.OK)
+		Optional<Store> response = storeRepository.findById(id);
+		return response.isPresent() ? new ResponseEntity<>(response.get(), HttpStatus.OK)
 				: new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 	}
 
